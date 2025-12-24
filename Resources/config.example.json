@@ -1,0 +1,22 @@
+{
+  "reverseMouseScroll": true,
+  "reverseTrackpadScroll": false,
+  "buttonMappings": [
+    {
+      "button": 3,
+      "action": {
+        "type": "key",
+        "keyCode": 124,
+        "modifiers": ["control"]
+      }
+    },
+    {
+      "button": 4,
+      "action": {
+        "type": "key",
+        "keyCode": 123,
+        "modifiers": ["control"]
+      }
+    }
+  ]
+}

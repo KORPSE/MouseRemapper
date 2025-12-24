@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.mouse-remapper</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/mouse-remapper</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/mouse-remapper.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/mouse-remapper.error.log</string>
+    <key>NSAccessibilityUsageDescription</key>
+    <string>This app needs accessibility access to remap keyboard and mouse key presses.</string>
+</dict>
+</plist>
