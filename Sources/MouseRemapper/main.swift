@@ -1,4 +1,5 @@
 import Foundation
+import Cocoa
 
 func printUsage() {
     print("""
@@ -46,6 +47,24 @@ func parseArguments() -> (configPath: String?, shouldGenerate: Bool, shouldShowH
     return (configPath, shouldGenerate, shouldShowHelp)
 }
 
+func promptAccessibilityPermissions() {
+    let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+    let accessEnabled = AXIsProcessTrustedWithOptions(options)
+    
+    if !accessEnabled {
+        print("Accessibility permissions required!")
+        print("A system dialog should have appeared asking for permissions.")
+        print("After granting permissions, please restart the app.")
+        print("\nWaiting for permissions to be granted...")
+        
+        if !AXIsProcessTrusted() {
+            exit(1)
+        }
+        
+        print("Permissions granted! Starting daemon...")
+    }
+}
+
 // Main execution
 let (configPath, shouldGenerate, shouldShowHelp) = parseArguments()
 
@@ -64,6 +83,7 @@ if shouldGenerate {
 
 print("=== Mouse Remapper Daemon ===")
 
+promptAccessibilityPermissions()
 let config = ConfigManager.loadConfig(from: configPath)
 let remapper = MouseRemapper(config: config)
 
