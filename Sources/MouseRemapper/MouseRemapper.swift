@@ -19,13 +19,32 @@ class MouseRemapper {
             exit(1)
         }
         
+        // Register for sleep/wake notifications
+        registerSleepWakeNotifications()
+        
+        createEventTap()
+        
+        print("Mouse remapper daemon started successfully!")
+        print("\nConfiguration:")
+        print("  Reverse mouse scroll (Y-axis only): \(config.reverseMouseScroll)")
+        print("  Reverse trackpad scroll: \(config.reverseTrackpadScroll)")
+        print("\nButton mappings:")
+        print(eventHandler.mappingDescription)
+        print()
+        
+        CFRunLoopRun()
+    }
+    
+    private func createEventTap() {
         let eventMask = (1 << CGEventType.leftMouseDown.rawValue) |
                        (1 << CGEventType.leftMouseUp.rawValue) |
                        (1 << CGEventType.rightMouseDown.rawValue) |
                        (1 << CGEventType.rightMouseUp.rawValue) |
                        (1 << CGEventType.otherMouseDown.rawValue) |
                        (1 << CGEventType.otherMouseUp.rawValue) |
-                       (1 << CGEventType.scrollWheel.rawValue)
+                       (1 << CGEventType.scrollWheel.rawValue) |
+                       (1 << CGEventType.tapDisabledByTimeout.rawValue) |
+                       (1 << CGEventType.tapDisabledByUserInput.rawValue)
         
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
@@ -38,6 +57,14 @@ class MouseRemapper {
                 }
                 
                 let remapper = Unmanaged<MouseRemapper>.fromOpaque(userInfo).takeUnretainedValue()
+                
+                // Handle tap being disabled
+                if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                    if let eventTap = remapper.eventTap {
+                        CGEvent.tapEnable(tap: eventTap, enable: true)
+                    }
+                    return Unmanaged.passRetained(event)
+                }
                 
                 if let modifiedEvent = remapper.eventHandler.handleEvent(event) {
                     return Unmanaged.passRetained(modifiedEvent)
@@ -55,19 +82,37 @@ class MouseRemapper {
         runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
         CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
+    }
+    
+    private func registerSleepWakeNotifications() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(handleWakeNotification),
+            name: NSWorkspace.didWakeNotification,
+            object: nil
+        )
         
-        print("Mouse remapper daemon started successfully!")
-        print("\nConfiguration:")
-        print("  Reverse mouse scroll (Y-axis only): \(config.reverseMouseScroll)")
-        print("  Reverse trackpad scroll: \(config.reverseTrackpadScroll)")
-        print("\nButton mappings:")
-        print(eventHandler.mappingDescription)
-        print()
-        
-        CFRunLoopRun()
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(handleSleepNotification),
+            name: NSWorkspace.willSleepNotification,
+            object: nil
+        )
+    }
+    
+    @objc private func handleSleepNotification() {
+        // Silent handling
+    }
+    
+    @objc private func handleWakeNotification() {
+        if let tap = eventTap {
+            CGEvent.tapEnable(tap: tap, enable: true)
+        }
     }
     
     func stop() {
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+        
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
             if let source = runLoopSource {
