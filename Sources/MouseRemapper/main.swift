@@ -87,14 +87,29 @@ promptAccessibilityPermissions()
 let config = ConfigManager.loadConfig(from: configPath)
 let remapper = MouseRemapper(config: config)
 
-signal(SIGINT) { _ in
-    print("\nReceived SIGINT, shutting down...")
+// Route SIGINT/SIGTERM through GCD so the handlers can call Swift code (signal(2)
+// handlers can't safely invoke arbitrary Swift). The default disposition is ignored
+// so the dispatch source is the only consumer.
+signal(SIGINT, SIG_IGN)
+signal(SIGTERM, SIG_IGN)
+
+let shutdown: @Sendable () -> Void = {
+    remapper.stop()
     exit(0)
 }
 
-signal(SIGTERM) { _ in
-    print("\nReceived SIGTERM, shutting down...")
-    exit(0)
+let sigintSource = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)
+sigintSource.setEventHandler {
+    print("\nReceived SIGINT, shutting down...")
+    shutdown()
 }
+sigintSource.resume()
+
+let sigtermSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+sigtermSource.setEventHandler {
+    print("\nReceived SIGTERM, shutting down...")
+    shutdown()
+}
+sigtermSource.resume()
 
 remapper.start()

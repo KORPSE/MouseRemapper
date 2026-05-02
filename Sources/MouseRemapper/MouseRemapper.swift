@@ -72,6 +72,9 @@ class MouseRemapper {
                 
                 return nil
             },
+            // passUnretained is safe: the MouseRemapper instance is retained for the
+            // entire program lifetime by `main.swift`, and stop() invalidates the tap
+            // before any deallocation could occur.
             userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         ) else {
             print("ERROR: Failed to create event tap!")
@@ -112,13 +115,19 @@ class MouseRemapper {
     
     func stop() {
         NSWorkspace.shared.notificationCenter.removeObserver(self)
-        
+
+        if let source = runLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
+            CFRunLoopSourceInvalidate(source)
+        }
+        runLoopSource = nil
+
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
-            if let source = runLoopSource {
-                CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
-            }
+            CFMachPortInvalidate(tap)
         }
+        eventTap = nil
+
         CFRunLoopStop(CFRunLoopGetCurrent())
         print("\nMouse remapper daemon stopped")
     }

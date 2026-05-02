@@ -9,10 +9,12 @@ enum ButtonAction {
 class EventHandler {
     private let config: Config
     private let buttonMap: [UInt32: ButtonAction]
-    
+    private let eventSource: CGEventSource?
+
     init(config: Config) {
         self.config = config
         self.buttonMap = Self.buildButtonMap(from: config)
+        self.eventSource = CGEventSource(stateID: .hidSystemState)
     }
     
     private static func buildButtonMap(from config: Config) -> [UInt32: ButtonAction] {
@@ -104,44 +106,30 @@ class EventHandler {
     }
     
     private func remapToMouseButton(event: CGEvent, targetButton: UInt32, isDown: Bool) -> CGEvent? {
-        let newType = eventTypeForButton(targetButton, isDown: isDown)
-        
-        guard let newEvent = CGEvent(
-            mouseEventSource: nil,
-            mouseType: newType,
-            mouseCursorPosition: event.location,
-            mouseButton: CGMouseButton(rawValue: targetButton)!
-        ) else {
-            return event
-        }
-        
-        newEvent.flags = event.flags
-        newEvent.setIntegerValueField(.mouseEventButtonNumber, value: Int64(targetButton))
-        
-        return newEvent
+        event.type = eventTypeForButton(targetButton, isDown: isDown)
+        event.setIntegerValueField(.mouseEventButtonNumber, value: Int64(targetButton))
+        return event
     }
     
     private func sendKeyCombo(key: CGKeyCode, modifiers: CGEventFlags) {
-        let source = CGEventSource(stateID: .hidSystemState)
-        
         var fixedModifiers = modifiers
         if modifiers.contains(.maskControl) {
             fixedModifiers.insert(.maskSecondaryFn)
         }
-        
-        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: true) else {
+
+        guard let keyDown = CGEvent(keyboardEventSource: eventSource, virtualKey: key, keyDown: true) else {
             return
         }
-        
+
         keyDown.flags = fixedModifiers
         keyDown.post(tap: .cghidEventTap)
-        
+
         usleep(10000)
-        
-        guard let keyUp = CGEvent(keyboardEventSource: source, virtualKey: key, keyDown: false) else {
+
+        guard let keyUp = CGEvent(keyboardEventSource: eventSource, virtualKey: key, keyDown: false) else {
             return
         }
-        
+
         keyUp.flags = fixedModifiers
         keyUp.post(tap: .cghidEventTap)
     }
