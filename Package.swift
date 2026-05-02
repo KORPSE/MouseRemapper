@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 5.10
 import PackageDescription
 
 let package = Package(
@@ -12,6 +12,9 @@ let package = Package(
             targets: ["MouseRemapper"]
         )
     ],
+    dependencies: [
+        .package(url: "https://github.com/swiftlang/swift-testing.git", from: "0.10.0")
+    ],
     targets: [
         .executableTarget(
             name: "MouseRemapper",
@@ -19,7 +22,10 @@ let package = Package(
         ),
         .testTarget(
             name: "MouseRemapperTests",
-            dependencies: ["MouseRemapper"]
+            dependencies: [
+                "MouseRemapper",
+                .product(name: "Testing", package: "swift-testing")
+            ]
         )
     ]
 )

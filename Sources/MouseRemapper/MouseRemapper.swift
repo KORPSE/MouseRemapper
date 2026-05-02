@@ -112,13 +112,19 @@ class MouseRemapper {
     
     func stop() {
         NSWorkspace.shared.notificationCenter.removeObserver(self)
-        
+
+        if let source = runLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
+            CFRunLoopSourceInvalidate(source)
+        }
+        runLoopSource = nil
+
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
-            if let source = runLoopSource {
-                CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
-            }
+            CFMachPortInvalidate(tap)
         }
+        eventTap = nil
+
         CFRunLoopStop(CFRunLoopGetCurrent())
         print("\nMouse remapper daemon stopped")
     }
