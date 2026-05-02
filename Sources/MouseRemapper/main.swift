@@ -87,9 +87,6 @@ promptAccessibilityPermissions()
 let config = ConfigManager.loadConfig(from: configPath)
 let remapper = MouseRemapper(config: config)
 
-// Route SIGINT/SIGTERM through GCD so the handlers can call Swift code (signal(2)
-// handlers can't safely invoke arbitrary Swift). The default disposition is ignored
-// so the dispatch source is the only consumer.
 signal(SIGINT, SIG_IGN)
 signal(SIGTERM, SIG_IGN)
 

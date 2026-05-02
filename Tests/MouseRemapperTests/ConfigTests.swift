@@ -54,12 +54,10 @@ import Foundation
     let configPath = tmpDir.appendingPathComponent("config.json")
     defer { try? FileManager.default.removeItem(at: tmpDir) }
 
-    // First load: file missing → defaults written to disk.
     let first = ConfigManager.loadConfig(from: configPath.path)
     #expect(FileManager.default.fileExists(atPath: configPath.path))
     #expect(first.buttonMappings.count == Config.createDefault().buttonMappings.count)
 
-    // Second load reads back what was just saved.
     let second = ConfigManager.loadConfig(from: configPath.path)
     #expect(second.reverseMouseScroll == first.reverseMouseScroll)
     #expect(second.buttonMappings.count == first.buttonMappings.count)

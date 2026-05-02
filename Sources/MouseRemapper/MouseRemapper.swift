@@ -72,9 +72,6 @@ class MouseRemapper {
                 
                 return nil
             },
-            // passUnretained is safe: the MouseRemapper instance is retained for the
-            // entire program lifetime by `main.swift`, and stop() invalidates the tap
-            // before any deallocation could occur.
             userInfo: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         ) else {
             print("ERROR: Failed to create event tap!")

@@ -13,9 +13,6 @@ let package = Package(
         )
     ],
     dependencies: [
-        // Required under Command-Line-Tools toolchain: ships the public `Testing`
-        // module but not `_TestingInternals`, which SwiftPM's test runner needs.
-        // Drop this once full Xcode is the build environment.
         .package(url: "https://github.com/swiftlang/swift-testing.git", from: "0.10.0")
     ],
     targets: [
